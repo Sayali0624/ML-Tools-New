@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+ml-backend/venv/
+
+# Node
+frontend/node_modules/
+
+# Environment
+.env
+
+# macOS/Windows system files
+.DS_Store
+Thumbs.db
