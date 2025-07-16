@@ -4,7 +4,7 @@ __pycache__/
 ml-backend/venv/
 
 # Node
-frontend/node_modules/
+ml-webcam-app/node_modules/
 
 # Environment
 .env
