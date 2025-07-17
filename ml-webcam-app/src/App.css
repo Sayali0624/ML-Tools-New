@@ -69,13 +69,25 @@ body {
   width: 100%;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* Changed from 'center' to 'flex-start' to align content correctly with heatmap */
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   padding: 20px;
   max-width: 90%; /* Increased size */
   aspect-ratio: 16 / 9; /* Maintain aspect ratio */
+  position: relative; /* Added for loading overlay positioning */
+}
+
+/* Ensure the webcam feed takes up appropriate space within its container */
+.webcam-container > div:first-child {
+  flex-grow: 1; /* Allows the webcam div to take available space */
+  display: flex; /* Ensures webcam feed inside is centered */
+  justify-content: center;
+  align-items: center;
+  position: relative; /* Important for the loading overlay to position correctly over the webcam */
+  min-height: 480px; /* Or a suitable height for the webcam area */
+  min-width: 640px; /* Or a suitable width */
 }
 
 .webcam-feed {
@@ -88,6 +100,40 @@ body {
   margin: 0 auto;
   box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.3);
   border: 2px solid #ddd;
+}
+
+/* Loading Overlay Styles */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.85); /* Semi-transparent white */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 100; /* Ensure it's on top of webcam feed */
+  border-radius: 10px; /* Match webcam-feed border-radius */
+  color: #333;
+  font-size: 1.2em;
+  font-weight: 600;
+  gap: 15px;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-top-color: #007bff; /* Blue for the spinner */
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 
@@ -113,6 +159,7 @@ body {
   .webcam-container {
     padding: 15px;
     max-width: 100%;
+    flex-direction: column; /* Stack webcam and heatmap vertically on small screens */
   }
 }
 
