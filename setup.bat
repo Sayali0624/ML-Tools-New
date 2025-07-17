@@ -1,73 +1,86 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: ----------- STEP 1: Check if Python is installed -----------
+echo =====================================================
+echo 🔧 ML Tools Setup - Windows Environment
+echo =====================================================
+
+:: Check Python installation
 python --version >nul 2>&1
 if %errorlevel% neq 0 (
 echo [ERROR] Python is not installed.
-echo Please install Python 3.10 or higher from https://www.python.org/downloads/
+echo Please install Python 3.10+ from https://www.python.org/downloads/
 pause
 exit /b
 )
 
-:: ----------- STEP 2: Check if pip is available -----------
+:: Ensure pip is available
 pip --version >nul 2>&1
 if %errorlevel% neq 0 (
-echo [INFO] pip not found. Attempting to install pip...
+echo [INFO] pip not found. Installing pip...
 python -m ensurepip
 )
 
-:: ----------- STEP 3: Check if Node.js is installed -----------
+:: Check Node.js
 node -v >nul 2>&1
 if %errorlevel% neq 0 (
 echo [ERROR] Node.js is not installed.
-echo Please install Node.js LTS version from https://nodejs.org/
+echo Please install Node.js from https://nodejs.org/
 pause
 exit /b
 )
 
-:: ----------- STEP 4: Check if npm is available -----------
+:: Check npm
 npm -v >nul 2>&1
 if %errorlevel% neq 0 (
-echo [ERROR] npm not found. Check your Node.js installation.
+echo [ERROR] npm not available. Please reinstall Node.js.
 pause
 exit /b
 )
 
-:: ----------- STEP 5: Backend Setup -----------
-echo [✓] Setting up Python backend...
+echo ==============================================
+echo 🐍 Setting up Python backend dependencies...
+echo ==============================================
+
 cd ml-backend
 
-:: Create venv if not exists
+:: Create virtual environment if it doesn't exist
 if not exist venv (
-echo Creating Python virtual environment...
+echo Creating virtual environment...
 python -m venv venv
 )
 
+:: Activate and install backend requirements
 call venv\Scripts\activate
-
-echo Installing Python requirements...
+echo Installing backend requirements...
 pip install --upgrade pip
 pip install -r requirements.txt
 
 cd ..
 
-:: ----------- STEP 6: Frontend Setup -----------
-echo [✓] Setting up React frontend...
-cd ml-frontend
+echo ==============================================
+echo 🧠 Setting up React frontend...
+echo ==============================================
+
+cd ml-webcam-app
+
 if exist node_modules (
-echo Skipping npm install (node_modules exists)
+echo node_modules found. Skipping npm install...
 ) else (
+echo Installing frontend dependencies...
 npm install
 )
+
 cd ..
 
-:: ----------- STEP 7: Launch frontend and backend ----------
-echo [✓] Launching frontend and backend in separate terminals...
+echo ==============================================
+echo 🚀 Launching ML Tools (backend + frontend)...
+echo ==============================================
 
 start "ML Tools Backend" cmd /k "cd ml-backend && call venv\Scripts\activate && python app.py"
-start "ML Tools Frontend" cmd /k "cd ml-frontend && npm start"
+start "ML Tools Frontend" cmd /k "cd ml-webcam-app && npm start"
 
-echo [✓] ML Tools is launching...
-echo You can now use the web app in your browser (http://localhost:3000)
+echo =====================================================
+echo ✅ ML Tools is now running at http://localhost:3000
+echo =====================================================
 pause
