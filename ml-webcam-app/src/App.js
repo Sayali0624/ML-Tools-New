@@ -8,7 +8,7 @@ import { runEmotionDetection } from './models/emotionDetection';
 import { runObjectDetection } from './models/objectDetection';
 import { runActivityDetection } from './models/activityDetection';
 
-import { addNewFace } from './models/addFace'; // Import addNewFace
+import { addNewFace } from './models/addFace';
 import './App.css';
 
 // Import your image assets here
@@ -27,8 +27,10 @@ function App() {
   const [showAddFaceInput, setShowAddFaceInput] = useState(false);
   const [newFaceName, setNewFaceName] = useState('');
   const [addFaceMessage, setAddFaceMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false); // New state for loading
 
   const handleSetMode = (newMode) => {
+    setIsLoading(true); // Set loading to true when a new mode is selected
     setMode(newMode);
     setShowAddFaceInput(false);
     setNewFaceName('');
@@ -54,18 +56,58 @@ function App() {
   useEffect(() => {
     if (!mode) return;
 
-    const runModel = () => {
-      if (mode === 'face') runFaceRecognition(webcamRef, setDetections);
-      else if (mode === 'age') runAgeEstimation(webcamRef, setDetections);
-      else if (mode === 'depth') runDepthEstimation(webcamRef, setDetections, setHeatmapImage);
-      else if (mode === 'object') runObjectDetection(webcamRef, setDetections);
-      else if (mode === 'emotion') runEmotionDetection(webcamRef, setDetections);
-      else if (mode === 'activity') runActivityDetection(webcamRef, setDetections);
+    let intervalId; // To store the interval ID for cleanup
+
+    const initializeAndRunModel = async () => {
+      // Clear previous interval if any
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+
+      // Clear detections and heatmap when switching modes
+      setDetections([]);
+      setHeatmapImage(null);
+
+      // Await the initial model loading and first run
+      if (mode === 'face') {
+        await runFaceRecognition(webcamRef, setDetections);
+      } else if (mode === 'age') {
+        await runAgeEstimation(webcamRef, setDetections);
+      } else if (mode === 'depth') {
+        await runDepthEstimation(webcamRef, setDetections, setHeatmapImage);
+      } else if (mode === 'object') {
+        await runObjectDetection(webcamRef, setDetections);
+      } else if (mode === 'emotion') {
+        await runEmotionDetection(webcamRef, setDetections);
+      } else if (mode === 'activity') {
+        await runActivityDetection(webcamRef, setDetections);
+      }
+
+      setIsLoading(false); // Set loading to false AFTER the initial model load/run
+
+      // Start continuous detection only after the model is loaded and ready
+      intervalId = setInterval(() => {
+        if (webcamRef.current && webcamRef.current.video.readyState === 4) {
+          if (mode === 'face') runFaceRecognition(webcamRef, setDetections);
+          else if (mode === 'age') runAgeEstimation(webcamRef, setDetections);
+          else if (mode === 'depth') runDepthEstimation(webcamRef, setDetections, setHeatmapImage);
+          else if (mode === 'object') runObjectDetection(webcamRef, setDetections);
+          else if (mode === 'emotion') runEmotionDetection(webcamRef, setDetections);
+          else if (mode === 'activity') runActivityDetection(webcamRef, setDetections);
+        }
+      }, 1000); // Run every 1000ms for continuous detection
     };
 
-    const interval = setInterval(runModel, 1000);
-    return () => clearInterval(interval);
-  }, [mode]);
+    initializeAndRunModel();
+
+    // Cleanup function for useEffect
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [mode]); // Depend on 'mode' so this effect re-runs when mode changes
+
 
   return (
     <div className="app-layout font-inter bg-gray-900 text-white min-h-screen flex">
@@ -92,8 +134,15 @@ function App() {
       {/* Main Content Area */}
       <div className="flex-1 p-8 flex flex-col items-center">
         <div className="webcam-container flex justify-center items-start gap-6">
-          <div style={{ position: 'relative' }}>
+          {/* Added relative positioning to parent for loading overlay */}
+          <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             <WebcamFeed ref={webcamRef} detections={detections} />
+            {isLoading && ( // Conditionally render the loading overlay
+              <div className="loading-overlay">
+                <div className="spinner"></div>
+                <p>Loading Model...</p>
+              </div>
+            )}
           </div>
 
           {mode === 'depth' && heatmapImage && (
