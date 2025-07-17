@@ -17,7 +17,7 @@ chmod +x setup.sh
 ./setup.sh
 
 
-## Windows
+## * Windows Setup
 
 git clone https://github.com/Sayali0624/ML-Tools-New.git
 cd ML-Tools-New
