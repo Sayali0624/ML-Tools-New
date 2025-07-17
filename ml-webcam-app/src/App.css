@@ -1,0 +1,140 @@
+/* src/App.css */
+
+/* Basic styling for the body to center the content */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #dbe9f4;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* Align to start for navbar at top */
+  min-height: 100vh;
+  margin: 0;
+  padding: 0; /* Remove padding from body as content will have it */
+  box-sizing: border-box;
+  color: #333;
+}
+
+/* App Layout */
+.app-layout {
+  display: flex;
+  flex-direction: column; /* Stack navbar and webcam vertically */
+  align-items: center; /* Center items horizontally */
+  width: 100%;
+  padding: 20px; /* Add padding to the overall layout */
+  gap: 20px; /* Space between navbar and webcam */
+}
+
+/* Navbar styles */
+.navbar {
+  display: flex;
+  justify-content: center; /* Center the navigation items */
+  background-color: #f0f8ff;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  padding: 15px 20px;
+  width: 100%;
+  max-width: 1200px; /* Max width for the navbar */
+  gap: 20px; /* Space between navigation items */
+  flex-wrap: wrap; /* Allow items to wrap on smaller screens */
+}
+
+.nav-item {
+  color: #444;
+  padding: 10px 15px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  text-align: left;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  font-size: 1em;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 8px; /* Rounded corners for nav items */
+}
+
+.nav-item:hover {
+  background-color: #e3f2fd;
+  color: #0056b3;
+}
+
+.nav-item-icon {
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* Webcam Container */
+.webcam-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  max-width: 90%; /* Increased size */
+  aspect-ratio: 16 / 9; /* Maintain aspect ratio */
+}
+
+.webcam-feed {
+  width: 100%;
+  height: 100%; /* Take full height of container */
+  object-fit: contain; /* Ensure the video fits within the container */
+  border-radius: 10px;
+  background-color: #000;
+  display: block;
+  margin: 0 auto;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.3);
+  border: 2px solid #ddd;
+}
+
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .app-layout {
+    padding: 15px;
+    gap: 15px;
+  }
+
+  .navbar {
+    flex-direction: column; /* Stack nav items vertically on small screens */
+    align-items: flex-start; /* Align text to left */
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .nav-item {
+    padding: 8px 12px;
+    font-size: 0.95em;
+  }
+
+  .webcam-container {
+    padding: 15px;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-layout {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .navbar {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .nav-item {
+    padding: 6px 10px;
+    font-size: 0.9em;
+  }
+
+  .nav-item-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 6px;
+  }
+}
