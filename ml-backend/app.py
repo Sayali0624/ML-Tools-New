@@ -119,22 +119,35 @@ try:
     print("Haar cascade classifiers loaded successfully.", file=sys.stderr)
 
     # Load Known Faces for Face Recognition
+    
     print("Loading known faces for recognition...", file=sys.stderr)
     for filename in os.listdir(known_faces_dir):
-        if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
-            path = os.path.join(known_faces_dir, filename)
-            try:
-                image = face_recognition.load_image_file(path)
-                encodings = face_recognition.face_encodings(image)
-                if encodings:
-                    known_face_encodings.append(encodings[0])
-                    known_face_names.append(os.path.splitext(filename)[0])
-                    print(f"Loaded face: {os.path.splitext(filename)[0]}", file=sys.stderr)
-                else:
-                    print(f"No face found in {filename}", file=sys.stderr)
-            except Exception as e:
-                print(f"Error processing image {filename} for face recognition: {e}", file=sys.stderr)
+      if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
+        path = os.path.join(known_faces_dir, filename)
+        try:
+            # Load with PIL to enforce RGB and convert to uint8 numpy array
+            pil_image = Image.open(path).convert("RGB")
+            image = np.array(pil_image).astype(np.uint8)
+            image = np.ascontiguousarray(image)
+
+            # Sanity check
+            if image.ndim != 3 or image.shape[2] != 3:
+                print(f"[ERROR] Skipping {filename}: Invalid shape {image.shape}", file=sys.stderr)
+                continue
+
+            encodings = face_recognition.face_encodings(image)
+            if encodings:
+                known_face_encodings.append(encodings[0])
+                known_face_names.append(os.path.splitext(filename)[0])
+                print(f"Loaded face: {filename}", file=sys.stderr)
+            else:
+                print(f"No face found in {filename}", file=sys.stderr)
+        except Exception as e:
+            print(f"Error processing image {filename} for face recognition: {e}", file=sys.stderr)
+
     print(f"Finished loading {len(known_face_names)} known faces.", file=sys.stderr)
+
+
 
 except Exception as e:
     print(f"Error during initial model loading: {e}\n{traceback.format_exc()}", file=sys.stderr)
@@ -295,7 +308,23 @@ def predict_face():
         if frame is None:
             return jsonify({"error": "Could not decode image."}), 400
 
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        print(f"[DEBUG] Received frame dtype: {frame.dtype}, shape: {frame.shape}", file=sys.stderr)
+
+        if frame.dtype != np.uint8:
+            print("[WARNING] Frame is not uint8. Converting...", file=sys.stderr)
+            frame = frame.astype(np.uint8)
+
+        if len(frame.shape) != 3 or frame.shape[2] != 3:
+            print(f"[ERROR] Frame shape is not 3-channel RGB. Shape: {frame.shape}", file=sys.stderr)
+            return jsonify({"error": "Image must be a 3-channel RGB image."}), 400
+
+        try:
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            rgb_frame = np.ascontiguousarray(rgb_frame)
+        except Exception as conv_error:
+            print(f"[ERROR] cvtColor failed: {conv_error}", file=sys.stderr)
+            return jsonify({"error": f"cvtColor failed: {str(conv_error)}"}), 500          
+        
 
         # Find all face locations and face encodings in the current frame
         face_locations = face_recognition.face_locations(rgb_frame, model='hog')
@@ -325,11 +354,12 @@ def predict_face():
         return jsonify({"error": str(e)}), 500
 
 # ---------------- Add Face Route ---------------- #
+
 @app.route('/add_face', methods=['POST'])
 def add_face():
     try:
         name = request.form.get('name')
-        file = request.files.get('image') # This route correctly expects a file upload
+        file = request.files.get('image')
 
         if not name or not file:
             return jsonify({'message': 'Missing name or image'}), 400
@@ -340,30 +370,31 @@ def add_face():
             return jsonify({'message': 'Invalid name provided.'}), 400
 
         save_path = os.path.join(known_faces_dir, f"{safe_name}.jpg")
-
-        # Save the image
         file.save(save_path)
 
-        # Optionally, reload the known faces immediately without requiring a restart
-        # For simplicity and to match the original request, we suggest a restart.
-        # In a production app, you might want to dynamically update known_face_encodings.
-        # Example for dynamic update (uncomment if needed):
-        # image = face_recognition.load_image_file(save_path)
-        # encodings = face_recognition.face_encodings(image)
-        # if encodings:
-        #     known_face_encodings.append(encodings[0])
-        #     known_face_names.append(safe_name)
-        #     return jsonify({'message': f'Face for {safe_name} added successfully!'})
-        # else:
-        #     os.remove(save_path) # Remove if no face was found
-        #     return jsonify({'message': f'No face found in the provided image for {safe_name}.'}), 400
+        # Load and encode the new face immediately
+        pil_image = Image.open(save_path).convert("RGB")
+        image = np.array(pil_image).astype(np.uint8)
+        image = np.ascontiguousarray(image)
 
+        if image.ndim != 3 or image.shape[2] != 3:
+            os.remove(save_path)
+            return jsonify({'message': 'Image is not a valid RGB image.'}), 400
 
-        return jsonify({'message': f'Face saved as {safe_name}.jpg. Please restart backend to load new face.'})
+        encodings = face_recognition.face_encodings(image)
+        if encodings:
+            known_face_encodings.append(encodings[0])
+            known_face_names.append(safe_name)
+            print(f"Dynamically added face for: {safe_name}", file=sys.stderr)
+            return jsonify({'message': f'Face for {safe_name} added successfully!'})
+        else:
+            os.remove(save_path)
+            return jsonify({'message': f'No face found in the provided image for {safe_name}.'}), 400
 
     except Exception as e:
         print(f"Error in /add_face: {e}\n{traceback.format_exc()}", file=sys.stderr)
         return jsonify({"error": str(e)}), 500
+
 
 # ---------------- Age Estimation ---------------- #
 @app.route('/predict_age', methods=['POST'])
