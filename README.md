@@ -1,10 +1,11 @@
 # 🚀 ML Tools - One Command Setup Guide
 
 ## 🔧 Requirements
-- Python 3.8+
+- Python 3.10.9
 - Node.js + npm
 - Git
-- Internet connection
+- cmake 4.0.3
+- visual studio build tools 
 
 ## 🐧 Linux/macOS Setup
 
