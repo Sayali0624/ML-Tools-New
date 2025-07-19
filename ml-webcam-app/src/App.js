@@ -11,7 +11,6 @@ import { runActivityDetection } from './models/activityDetection';
 import { addNewFace } from './models/addFace';
 import './App.css';
 
-// Import your image assets here
 import faceIcon from './assets/face-icon.png';
 import ageIcon from './assets/age-icon.png';
 import depthIcon from './assets/depth-icon.png';
@@ -27,10 +26,11 @@ function App() {
   const [showAddFaceInput, setShowAddFaceInput] = useState(false);
   const [newFaceName, setNewFaceName] = useState('');
   const [addFaceMessage, setAddFaceMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false); // New state for loading
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasUnknownFace, setHasUnknownFace] = useState(false);
 
   const handleSetMode = (newMode) => {
-    setIsLoading(true); // Set loading to true when a new mode is selected
+    setIsLoading(true);
     setMode(newMode);
     setShowAddFaceInput(false);
     setNewFaceName('');
@@ -55,22 +55,19 @@ function App() {
 
   useEffect(() => {
     if (!mode) return;
-
-    let intervalId; // To store the interval ID for cleanup
+    let intervalId;
 
     const initializeAndRunModel = async () => {
-      // Clear previous interval if any
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-
-      // Clear detections and heatmap when switching modes
+      if (intervalId) clearInterval(intervalId);
       setDetections([]);
       setHeatmapImage(null);
 
-      // Await the initial model loading and first run
       if (mode === 'face') {
-        await runFaceRecognition(webcamRef, setDetections);
+        await runFaceRecognition(webcamRef, (newDetections) => {
+          setDetections(newDetections);
+          const containsUnknown = newDetections.some(det => det.name === 'Unknown');
+          setHasUnknownFace(containsUnknown);
+        });
       } else if (mode === 'age') {
         await runAgeEstimation(webcamRef, setDetections);
       } else if (mode === 'depth') {
@@ -83,35 +80,31 @@ function App() {
         await runActivityDetection(webcamRef, setDetections);
       }
 
-      setIsLoading(false); // Set loading to false AFTER the initial model load/run
+      setIsLoading(false);
 
-      // Start continuous detection only after the model is loaded and ready
       intervalId = setInterval(() => {
         if (webcamRef.current && webcamRef.current.video.readyState === 4) {
-          if (mode === 'face') runFaceRecognition(webcamRef, setDetections);
-          else if (mode === 'age') runAgeEstimation(webcamRef, setDetections);
+          if (mode === 'face') {
+            runFaceRecognition(webcamRef, (newDetections) => {
+              setDetections(newDetections);
+              const containsUnknown = newDetections.some(det => det.name === 'Unknown');
+              setHasUnknownFace(containsUnknown);
+            });
+          } else if (mode === 'age') runAgeEstimation(webcamRef, setDetections);
           else if (mode === 'depth') runDepthEstimation(webcamRef, setDetections, setHeatmapImage);
           else if (mode === 'object') runObjectDetection(webcamRef, setDetections);
           else if (mode === 'emotion') runEmotionDetection(webcamRef, setDetections);
           else if (mode === 'activity') runActivityDetection(webcamRef, setDetections);
         }
-      }, 1000); // Run every 1000ms for continuous detection
+      }, 1000);
     };
 
     initializeAndRunModel();
-
-    // Cleanup function for useEffect
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [mode]); // Depend on 'mode' so this effect re-runs when mode changes
-
+    return () => clearInterval(intervalId);
+  }, [mode]);
 
   return (
     <div className="app-layout font-inter bg-gray-900 text-white min-h-screen flex">
-      {/* Navigation Bar */}
       <div className="navbar w-64 bg-gray-800 p-6 flex flex-col items-start space-y-4 rounded-r-lg shadow-lg">
         <h2 className="text-2xl font-bold text-orange-400 mb-6">ML Tools</h2>
         {[{ label: 'Face Recognition', key: 'face', icon: faceIcon },
@@ -128,16 +121,14 @@ function App() {
               <img src={tool.icon} alt={`${tool.label} Icon`} className="nav-item-icon w-6 h-6" />
               <span>{tool.label}</span>
             </div>
-          ))}
+        ))}
       </div>
 
-      {/* Main Content Area */}
       <div className="flex-1 p-8 flex flex-col items-center">
         <div className="webcam-container flex justify-center items-start gap-6">
-          {/* Added relative positioning to parent for loading overlay */}
           <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             <WebcamFeed ref={webcamRef} detections={detections} />
-            {isLoading && ( // Conditionally render the loading overlay
+            {isLoading && (
               <div className="loading-overlay">
                 <div className="spinner"></div>
                 <p>Loading Model...</p>
@@ -161,7 +152,7 @@ function App() {
           )}
         </div>
 
-        {mode === 'face' && (
+        {mode === 'face' && hasUnknownFace && (
           <div className="mt-6 p-4 bg-gray-800 rounded-lg shadow-md w-full max-w-md flex flex-col items-center">
             <button
               onClick={() => setShowAddFaceInput(!showAddFaceInput)}
@@ -191,6 +182,10 @@ function App() {
               <p className="mt-3 text-sm text-center text-orange-300">{addFaceMessage}</p>
             )}
           </div>
+        )}
+
+        {mode === 'face' && !hasUnknownFace && (
+          <p className="mt-6 text-sm text-gray-400">Only known face(s) detected.</p>
         )}
       </div>
     </div>
