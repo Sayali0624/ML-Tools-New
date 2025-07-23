@@ -7,6 +7,13 @@ const WebcamFeed = React.forwardRef(({ detections }, ref) => {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
+    
+    // Ensure canvas dimensions match the video feed for accurate drawing
+    if (ref.current && ref.current.video) {
+      canvas.width = ref.current.video.videoWidth;
+      canvas.height = ref.current.video.videoHeight;
+    }
+    
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     detections.forEach(det => {
@@ -22,9 +29,10 @@ const WebcamFeed = React.forwardRef(({ detections }, ref) => {
         ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
 
         ctx.fillStyle = 'lime';
-        ctx.font = '14px Arial';
-        ctx.fillText(`${label} (${confidence}%)`, x1, y1 > 10 ? y1 - 5 : y1 + 15);
-        ctx.fillText(`X:${X.toFixed(2)} Y:${Y.toFixed(2)} Z:${Z.toFixed(2)}`, x1, y2 + 15);
+        // Further increased font size for better readability
+        ctx.font = '36px Arial'; 
+        ctx.fillText(`${label} (${confidence}%)`, x1, y1 > 30 ? y1 - 15 : y1 + 35); // Adjusted Y position
+        ctx.fillText(`X:${X.toFixed(2)} Y:${Y.toFixed(2)} Z:${Z.toFixed(2)}`, x1, y2 + 35); // Adjusted Y position
       }
 
       // ➤ Age Estimation
@@ -36,18 +44,21 @@ const WebcamFeed = React.forwardRef(({ detections }, ref) => {
         ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
 
         ctx.fillStyle = 'blue';
-        ctx.font = '14px Arial';
-        ctx.fillText(`Age: ${det.age}`, x1, y1 > 10 ? y1 - 5 : y1 + 15);
+        // Further increased font size for better readability
+        ctx.font = '24px Arial'; 
+        ctx.fillText(`Age: ${det.age}`, x1, y1 > 30 ? y1 - 15 : y1 + 35); // Adjusted Y position
       }
 
       // ➤ Activity Detection (show overlay top-center)
       if (det.predicted_activity) {
         ctx.fillStyle = 'orange';
-        ctx.font = 'bold 22px Arial';
-        ctx.fillText(`Activity: ${det.predicted_activity}`, 20, 30);
+        // Further increased font size for better readability
+        ctx.font = 'bold 36px Arial'; 
+        ctx.fillText(`Activity: ${det.predicted_activity}`, 20, 60); // Adjusted Y position
 
-        ctx.font = '16px Arial';
-        ctx.fillText(`Mean Intensity: ${det.mean_pixel_intensity.toFixed(1)}`, 20, 55);
+        // Further increased font size for better readability
+        ctx.font = '28px Arial'; 
+        ctx.fillText(`Mean Intensity: ${det.mean_pixel_intensity.toFixed(1)}`, 20, 105); // Adjusted Y position
       }
 
       // ➤ Emotion Detection
@@ -61,8 +72,9 @@ const WebcamFeed = React.forwardRef(({ detections }, ref) => {
         ctx.strokeRect(x, y, x2 - x, y2 - y);
 
         ctx.fillStyle = 'yellow';
-        ctx.font = '14px Arial';
-        ctx.fillText(`${label} (${confidence}%)`, x, y > 10 ? y - 5 : y + 15);
+        // Further increased font size for better readability
+        ctx.font = '36px Arial'; 
+        ctx.fillText(`${label} (${confidence}%)`, x, y > 30 ? y - 15 : y + 35); // Adjusted Y position
       }
 
       // ➤ Face Recognition
@@ -75,35 +87,41 @@ const WebcamFeed = React.forwardRef(({ detections }, ref) => {
         ctx.strokeRect(x, y, x2 - x, y2 - y);
 
         ctx.fillStyle = 'cyan';
-        ctx.font = '14px Arial';
-        ctx.fillText(`${label}`, x, y > 10 ? y - 5 : y + 15);
+        // Further increased font size for better readability
+        ctx.font = '28px Arial'; 
+        ctx.fillText(`${label}`, x, y > 30 ? y - 15 : y + 35); // Adjusted Y position
       }
 
       // ✅ ➤ Depth Estimation (center depth)
       if (det.center_depth !== undefined) {
         ctx.fillStyle = 'orange';
-        ctx.font = 'bold 22px Arial';
-        ctx.fillText(`Depth: ${det.center_depth.toFixed(1)} cm`, 20, 30);
+        // Further increased font size for better readability
+        ctx.font = 'bold 36px Arial'; 
+        ctx.fillText(`Depth: ${det.center_depth.toFixed(1)} cm`, 20, 60); // Adjusted Y position
       }
     });
-  }, [detections]);
+  }, [detections, ref]); // Added ref to dependency array to re-run when ref updates
 
   return (
-    <div style={{ position: 'relative', display: 'inline-block' }}>
+    <>
       <Webcam
         ref={ref}
         audio={false}
         screenshotFormat="image/jpeg"
-        width={640}
-        height={480}
+        className="webcam-feed" // This class will be styled in App.css
+        style={{ objectFit: 'cover' }} // Explicitly apply object-fit here
+        videoConstraints={{
+          width: 1280,
+          height: 720,
+          facingMode: 'user'
+        }}
       />
       <canvas
         ref={canvasRef}
-        width={640}
-        height={480}
-        style={{ position: 'absolute', top: 0, left: 0 }}
+        className="webcam-canvas" // This class will be styled in App.css
+        // Canvas dimensions will be set dynamically in useEffect to match video
       />
-    </div>
+    </>
   );
 });
 
