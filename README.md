@@ -9,16 +9,17 @@
 1. Clone this repository :
 
    git clone https://github.com/Sayali0624/ML-Tools-New.git
+   
    cd ML-Tools-New
 
-2. Navigate to the project folder:
+3. Navigate to the project folder:
 
    cd my-face-api-app
    
-3. Install the required dependencies:
+4. Install the required dependencies:
 
    npm install
 
-4. Running the Project
+5. Running the Project
 
    npm start 
