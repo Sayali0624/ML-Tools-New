@@ -97,7 +97,7 @@ function App() {
   };
 
   const loadLabeledImages = async () => {
-    const labels = ['Anjali']; // Ensure this array is accurate
+    const labels = ['Bill']; // Ensure this array is accurate
 
     return Promise.all(
       labels.map(async label => {
