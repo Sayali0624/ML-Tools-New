@@ -262,6 +262,7 @@ function App() {
       };
 
       const modelRunFunction = modelRunFunctionMap[mode];
+    
 
       if (modelRunFunction && webcamRef.current && webcamRef.current.video && webcamRef.current.video.readyState === 4) {
         try {
@@ -269,13 +270,20 @@ function App() {
           if (mode === 'face') {
             args.push(faceMatcher);
           } else if (mode === 'depth') {
-            args.push(setHeatmapImage);
+            
+            
+            args[0] = webcamRef.current.video; // pass the actual video element instead of the ref
+             //args.push(setHeatmapImage);
           }
 
           // Initial run
           const initialDetections = await modelRunFunction(...args);
           setIsLoading(false);
           addNotification(`${mode.charAt(0).toUpperCase() + mode.slice(1)} model loaded successfully`, 'success');
+
+          // Initial run
+
+
 
           // Check for unknown faces after initial detection (only for face mode)
           // Ensure initialDetections is an array before calling .some()
